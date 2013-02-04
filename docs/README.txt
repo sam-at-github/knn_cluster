@@ -1,6 +1,11 @@
-knn_cluster.php: visualizing and getting basic stats on different type of KNN connected component based clustering.
+knn_cluster.php:
+Visualizing and getting basic stats on different type of KNN connected component based clustering.
 Its *very* slow. The clustering alg needs to be rewritten and PHP arrays are slow which does not help. Not recommended for data sets over 10000pts. 10000pts -> 30mins and graph build is O(n^2).
 Still, its useful for testing and visualizing small 2D and 3D data sets. Also its relatively easy to add new types of clusterings, and distanc metrics.
+
+Requirements:
+All visualization is done via gnuplot (>=4.4). Currently fails silently if gnuplot is not installed.
+Requires >= PHP 5.3 fails loudly if not.
 
 Typical invokations:
 	#Get minimal help
