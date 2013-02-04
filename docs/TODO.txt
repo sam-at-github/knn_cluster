@@ -1,4 +1,2 @@
-finish docs
-finish this todo
-see inline comments (@todo).
+Finsh documentation including this todo. See inline comments (grep for @todo).
 

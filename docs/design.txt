@@ -1,4 +1,6 @@
+1. Overview:
 The main components of the system are:
+
 	knn_cluster.php
 		Reads user options in to internal format and instantiates whats needed.
 	KNNGraph
@@ -13,18 +15,20 @@ The main components of the system are:
 	Visualization ans Stats
 		takes a clustering and outputs plots or stats.
 
+2. File names:
 File output formats and file names are important, and actually complex to get right.
 There are arbitrarily many types of KNNClusterings. For each type statistical and graphical will be written out to file.
 Gets confusing with so many types. Theres also arb types of vector, types of vision and types of stats.
 Providing a consistent way to store this is very helpful. End of the day how files/dirs organised is a design descison.
-file hierarchy:
+The file hierarchy chosen is:
+	
 	<output dir>/<name>"_"<clustering type>"_"("vision"|"stats")/<name><full options except k>/[<type specific start>]<full options with k>[<type specific end>]
 	<full options except k> -> <clustering type string except k>"_"<vector type string>"_"<vision type string>
 	<full options with k> -> <clustering type string including k>"_"<vector type string>"_"<vision type string>
 
-	
+3. Class and Responsibilities (brief):
 ClassName: ClusterKNN (knn_cluster.php)
-Responsibility 1: Interprets user inputs and organizes modules to perform action based on them
+Responsibility: Interprets user inputs and organizes modules to perform action based on them
 Rationale: Something has ot do it. This is the core tool.
 PseudoCode:
 	read options in from cli and file
@@ -72,7 +76,7 @@ Anti Responsibility: Change the interface the NTreeClustering part of the interf
 Anti Responsibility: Change the interface the AbstractKNNCluster part of the interface.
 Rationale: KSweep a major UC.
 
-<more>
+<todo: more here>
 
 ClassName:
 Responsibility:
