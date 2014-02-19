@@ -52,11 +52,11 @@ class KNNGraph implements IteratorAggregate
 		// Build graph was moved to KNNVector to remove a function call and up the eff.
 		if( $handle_duplicates )
 		{
-			KNNVector::build_knn_graph_duplicates( &$this->nodes );
+			KNNVector::build_knn_graph_duplicates( $this->nodes );
 		}
 		else
 		{
-			KNNVector::build_knn_graph( &$this->nodes );
+			KNNVector::build_knn_graph( $this->nodes );
 		}
 	}
 	

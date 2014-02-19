@@ -1,2 +1,4 @@
-Finsh documentation including this todo. See inline comments (grep for @todo).
+* A better O(n*log(n)) knn clustering implementation.
+* Finish documentation including this todo!
+* See inline comments (grep for @todo).
 

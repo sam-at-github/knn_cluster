@@ -1,18 +1,23 @@
+#!/usr/bin/php
 <?php
-/*
+/**
  * KNNG connected component based clustering.
  * Most of this file is to do with parsing CLI options, and writing results to file.
  */
-
+ 
 version_compare( PHP_VERSION, "5.3", ">=" ) or die( "This script relies on features from PHP 5.3 and will fail with current version '".PHP_VERSION."'\n" );
 // Having a bad TZ is not E_WARNING material...
 date_default_timezone_set(@date_default_timezone_get());
 // Dont know why but sometimes PHP 5.3 is not printing a terminating newline here so:
 ini_set( "error_append_string", "\n" );
 ini_set( "memory_limit", -1 );
-ini_set( "display_errors", false );
+ini_set( "display_errors", true );
 ini_set( "log_errors", true );
 ini_set( "error_log", "error.log" );
+
+#ini_set("xdebug.profiler_enable", 1);
+#ini_set("xdebug.profiler_output_dir",".");
+#ini_set("xdebug.profiler_output_name", "" );
 
 require_once( 'include/set_include_path.php' );
 require_once( 'lib_knn_cluster.php' );
@@ -51,6 +56,7 @@ function handle_errors()
 		print "Error: ".$error_get_last['message']."\n";
 	}
 }
+
 
 ClusterKNN::go( $argc, $argv );
 	
@@ -134,8 +140,8 @@ class ClusterKNN
 		self::read_options( $argc, $argv );
 		self::$output_ksweep = fopen( "PHP://stderr", "w" );
 	
-		// The most confusing part about all this is the output filenames! Decision was made to handle them here rather than in modules that need them.
-		// S.t. have control here rather than having to change methods in modules.
+		// The most confusing part about all this is the output filenames! Decision was made to handle them here rather than in modules that need them,
+		// such that we have control here rather than having to change methods in modules.
 		// output file formats:
 		// 	<output dir>/<name>"_"<clustering type>"_"("vision"|"stats")/<name><full options except k>/<type specific start><name><full options with k><type specific end>
 		// 	<full options except k> -> <clustering type string except k>"_"<vector type string>"_"<vision type string>
