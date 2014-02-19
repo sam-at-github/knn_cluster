@@ -1,11 +1,11 @@
 <?php
 /*
- * KNNG connected component based clustering. 
- * Not suited to large datasets ;) ~ 1000pts/10s, but O(n^2) KNNG build time.
+ * KNNG connected component based clustering.
+ * Most of this file is to do with parsing CLI options, and writing results to file.
  */
 
 version_compare( PHP_VERSION, "5.3", ">=" ) or die( "This script relies on features from PHP 5.3 and will fail with current version '".PHP_VERSION."'\n" );
-// Having a bad TZ is not E_WARNING material! Grrrr.
+// Having a bad TZ is not E_WARNING material...
 date_default_timezone_set(@date_default_timezone_get());
 // Dont know why but sometimes PHP 5.3 is not printing a terminating newline here so:
 ini_set( "error_append_string", "\n" );
@@ -61,13 +61,7 @@ ClusterKNN::go( $argc, $argv );
  */
 class ClusterKNN
 {
-	// An internal field may have at least 4 types of relationship with an external parameter:
-	// Directly representable as an external parameter - meaning and form.
-	// Functionally dependent on one external parameter but has different form. E.g. a key that says use a given module.
-	// Dependent on many external parameter but meaning representable by a given external parameter. E.g. a file loc that may be set with one param, dependent on values of other params.
-	// Dependent on many external parameters not representable by a given external parameter.
-	// In this program external parameters are collected from two sources, the cli and a file, and presented in a single format that represents all external parameters.
-	// General rule is type one ext params are used directly, and ext params are not modified to represent other related stuff.
+	/** Config. Most settable from the CLI. */
 	private static $options_boolean = array( "true" => array( "true", "yes", "on" ), "false" => array( "false", "no", "off" ) );
 	private static $options = array(
 	'k_max'		=>	null,				//int
@@ -86,6 +80,7 @@ class ClusterKNN
 	'vision_options' => array(),		//array
 	'stats_options' => array() );
 	private static $module_prefix_keys = array( "cluster" => "co_", "vision" => "vo_", "vector" => "xo_", "stats" => "so_", );
+	/** CLI option parser options. */
 	private static $cli_options_options = array(
 	'k_max'		=>	array( 'long' => 'km' ),		//int
 	'k_sweep'	=> array( 'long' => 'ks' ),		//int
@@ -139,7 +134,7 @@ class ClusterKNN
 		self::read_options( $argc, $argv );
 		self::$output_ksweep = fopen( "PHP://stderr", "w" );
 	
-		// The most confusiong part about all this is the output filenames! Decision was made to handle them here rather than in modules that need them.
+		// The most confusing part about all this is the output filenames! Decision was made to handle them here rather than in modules that need them.
 		// S.t. have control here rather than having to change methods in modules.
 		// output file formats:
 		// 	<output dir>/<name>"_"<clustering type>"_"("vision"|"stats")/<name><full options except k>/<type specific start><name><full options with k><type specific end>
