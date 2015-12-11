@@ -37,64 +37,62 @@
  * Example error handler.
  *  function handle_errors() {
  *    global $error_get_last;
- *    if( isset( $error_get_last ) && ( $error_get_last['type'] &~ EC_CONTINUE ) )
+ *    if(isset($error_get_last) && ($error_get_last['type'] &~ EC_CONTINUE))
  *      print "Error: ".$error_get_last['message']."\n";
  *    }
- * @see http://au2.php.net/manual/en/class.errorexception.php, http://au2.php.net/manual/en/errorfunc.configuration.php		
+ * @see http://au2.php.net/manual/en/class.errorexception.php, http://au2.php.net/manual/en/errorfunc.configuration.php    
  */
 
 //These should not change if PHP is a sane language, but its not. Wont account for version < 5.2.
-if( version_compare( phpversion(), "5.3" ) >= 0 )
+if(version_compare(phpversion(), "5.3") >= 0)
 {
-	define( "EC_CONTINUE", E_NOTICE | E_USER_NOTICE | E_STRICT | E_USER_DEPRECATED | E_DEPRECATED ); //<UNKNOWN>
+  define("EC_CONTINUE", E_NOTICE | E_USER_NOTICE | E_STRICT | E_USER_DEPRECATED | E_DEPRECATED); //<UNKNOWN>
 }
 else
 {
-	define( "EC_CONTINUE", E_NOTICE | E_USER_NOTICE | E_STRICT ); //<UNKNOWN>
+  define("EC_CONTINUE", E_NOTICE | E_USER_NOTICE | E_STRICT); //<UNKNOWN>
 }
 
-define( "EC_RETHROW",  E_WARNING | E_USER_WARNING | E_RECOVERABLE_ERROR );
-define( "EC_DIE", E_USER_ERROR );
-define( "EC_FATAL", E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR );
+define("EC_RETHROW",  E_WARNING | E_USER_WARNING | E_RECOVERABLE_ERROR);
+define("EC_DIE", E_USER_ERROR);
+define("EC_FATAL", E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR);
 //Define this if you want thrown errors logged too. But note they get logged when they are exceptions too.
-//( ! defined( "EC_LOG_RETHROWN" ) ) && define( "EC_LOG_RETHROWN", true );
-
+//(! defined("EC_LOG_RETHROWN")) && define("EC_LOG_RETHROWN", true);
 
 /**
  * Handle all user handle-able errors, and reroute Errors to Exceptions appropriately - see above.
  * Attemped reimplementation of inbuilt for non thrown. All error logging is handled according to normal methods.
- *	Note:
- *		"It is important to remember that the standard PHP error handler is completely bypassed." - PHP ~ 5.2 Manual.
- *		"If an user error handler successfully handles an error then that error will not be reported by this error_get_last()." - PHP ~ 5.2 Manual.
+ *  Note:
+ *    "It is important to remember that the standard PHP error handler is completely bypassed." - PHP ~ 5.2 Manual.
+ *    "If an user error handler successfully handles an error then that error will not be reported by this error_get_last()." - PHP ~ 5.2 Manual.
  * Unfortunately cant pass the errcontext into the ErrorException in any way. so that trace is lost, unless you set LOG_RETHROWN.
  */
-function error_handler( $errno, $errmsg, $errfile, $errline, $errcontext )
-{	
-	//Log the error according to PHP_INI settings. ec_re_error_log() is a reimp of error_log().
-	ec_re_error_log( $errno, $errmsg, $errfile, $errline );	
-	
-	//PHP will not set error_get_last() for overidden errors - "completely bypassed".
-	//do this after ec_re_error_log() coz that casues E_STRICT.
-	set_error_get_last( $errno, $errmsg, $errfile, $errline, $errcontext );
+function error_handler($errno, $errmsg, $errfile, $errline, $errcontext)
+{  
+  //Log the error according to PHP_INI settings. ec_re_error_log() is a reimp of error_log().
+  ec_re_error_log($errno, $errmsg, $errfile, $errline);  
 
-	//Reroute the condition as described above.
-	if( EC_RETHROW & $errno )
-	{
-		 throw new ErrorException( $errmsg, $errno, $errno, $errfile, $errline ); //ErrorException::__construct ($message [, $code [, $severity [, $filename [, $lineno ]]]]]);
-	}
-	
-	//Any shutdown_functions will be called as pre usual.
-	elseif( EC_DIE & $errno )
-	{
-		exit(1);
-	}
-	
-	else
-	{
-		return true;
-	}	
+  //PHP will not set error_get_last() for overidden errors - "completely bypassed".
+  //do this after ec_re_error_log() coz that casues E_STRICT.
+  set_error_get_last($errno, $errmsg, $errfile, $errline, $errcontext);
+
+  //Reroute the condition as described above.
+  if(EC_RETHROW & $errno)
+  {
+     throw new ErrorException($errmsg, $errno, $errno, $errfile, $errline); //ErrorException::__construct ($message [, $code [, $severity [, $filename [, $lineno ]]]]]);
+  }
+
+  //Any shutdown_functions will be called as pre usual.
+  elseif(EC_DIE & $errno)
+  {
+    exit(1);
+  }
+
+  else
+  {
+    return true;
+  }  
 }
-
 
 /**
  * Reimplementation ~same as built-in error handler bar stack trace which you dont really get with Exceptions.
@@ -104,93 +102,90 @@ function error_handler( $errno, $errmsg, $errfile, $errline, $errcontext )
  * ini_get always returns string, ALL booleans map to (("0"|"")|"1"). 
  * @returns bool true iff logged error. 
  */
-function ec_re_error_log( $errno, $errmsg, $errfile, $errline )
+function ec_re_error_log($errno, $errmsg, $errfile, $errline)
 {
-	$logged = false; //whether a log was made.
-	if( $errno & error_reporting() )
-	{
-		// Yes, 'log_errors' and 'display_errors' are independent.
-		// "$errmsg is sent to PHP's system logger, using the Operating System's system logging mechanism or a file, 
-		//	depending on what the error_log  configuration directive is set to. This is the default option."
-		// 'display_errors' is pretty much just a switch - put *any* reportable errors on the output device.
-		if( ini_get( "log_errors" ) )
-		{
-			//adds some stuff to beginning/end of $errmsg.
-			//option for not logging errors that will be thrown.
-			if( ( $errno & ~EC_RETHROW ) || defined( "EC_LOG_RETHROWN" ) )
-			{
-					error_log( make_error_log( $errno, $errmsg, $errfile, $errline ) );
-					$logged = true;
-			}
-		}
-		
-		//"Value 'stderr' sends the errors to stderr instead of stdout. 
-		//The value is available as of PHP 5.2.4. In earlier versions, this directive was of type boolean."
-		if( ini_get( "display_errors" ) )
-		{
-		 	if( ini_get( "display_errors" ) == "stderr" )
-			{
-				$f_out = fopen( "php://stderr", "w" );
-				fwrite( $f_out, ini_get( "error_prepend_string" ).make_error_log( $errno, $errmsg, $errfile, $errline ).ini_get( "error_append_string" ) );
-			}
-			else
-			{
-				print ini_get( "error_prepend_string" ).make_error_log( $errno, $errmsg, $errfile, $errline ).ini_get( "error_append_string" );
-			}
-		}		
-	}
-	return $logged;
-}
+  $logged = false; //whether a log was made.
+  if($errno & error_reporting())
+  {
+    // Yes, 'log_errors' and 'display_errors' are independent.
+    // "$errmsg is sent to PHP's system logger, using the Operating System's system logging mechanism or a file, 
+    //  depending on what the error_log  configuration directive is set to. This is the default option."
+    // 'display_errors' is pretty much just a switch - put *any* reportable errors on the output device.
+    if(ini_get("log_errors"))
+    {
+      //adds some stuff to beginning/end of $errmsg.
+      //option for not logging errors that will be thrown.
+      if(($errno & ~EC_RETHROW) || defined("EC_LOG_RETHROWN"))
+      {
+          error_log(make_error_log($errno, $errmsg, $errfile, $errline));
+          $logged = true;
+      }
+    }
 
+    //"Value 'stderr' sends the errors to stderr instead of stdout. 
+    //The value is available as of PHP 5.2.4. In earlier versions, this directive was of type boolean."
+    if(ini_get("display_errors"))
+    {
+       if(ini_get("display_errors") == "stderr")
+      {
+        $f_out = fopen("php://stderr", "w");
+        fwrite($f_out, ini_get("error_prepend_string").make_error_log($errno, $errmsg, $errfile, $errline).ini_get("error_append_string"));
+      }
+      else
+      {
+        print ini_get("error_prepend_string").make_error_log($errno, $errmsg, $errfile, $errline).ini_get("error_append_string");
+      }
+    }    
+  }
+  return $logged;
+}
 
 /**
  * Reimplement built-in handlers output format.
  * as of PHP 5.3.
  */
-function make_error_log( $errno, $errmsg, $errfile, $errline )
+function make_error_log($errno, $errmsg, $errfile, $errline)
 { 
-	//Some of these errors can not occur here. Copied from PHP manual and added the 2 XXX_DEPRECATED types.
-	$errnotices = array (
-      E_ERROR              => 'Fatal Error',	//nh,nr //modified string from 'Error'.
-      E_WARNING            => 'Warning',	
-      E_PARSE              => 'Parsing Error',	//nh,nr
+  //Some of these errors can not occur here. Copied from PHP manual and added the 2 XXX_DEPRECATED types.
+  $errnotices = array (
+      E_ERROR              => 'Fatal Error',  //nh,nr //modified string from 'Error'.
+      E_WARNING            => 'Warning',  
+      E_PARSE              => 'Parsing Error',  //nh,nr
       E_NOTICE             => 'Notice',
-      E_CORE_ERROR         => 'Core Error',	//nh,nr
-      E_CORE_WARNING       => 'Core Warning',	//nh
-      E_COMPILE_ERROR      => 'Compile Error',	//nh,nr
+      E_CORE_ERROR         => 'Core Error',  //nh,nr
+      E_CORE_WARNING       => 'Core Warning',  //nh
+      E_COMPILE_ERROR      => 'Compile Error',  //nh,nr
       E_COMPILE_WARNING    => 'Compile Warning', 
-      E_USER_ERROR         => 'User Error',	//#nr
+      E_USER_ERROR         => 'User Error',  //#nr
       E_USER_WARNING       => 'User Warning',
       E_USER_NOTICE        => 'User Notice',
-      E_STRICT             => 'Runtime Notice',	//#nh
+      E_STRICT             => 'Runtime Notice',  //#nh
       E_RECOVERABLE_ERROR  => 'Catchable Fatal Error'
       //E_DEPRECATED         => 'Deprecated Notice',
       //E_USER_DEPRECATED    => 'User Deprecated Notice', 
-      );
-	$errprep = ( ( array_key_exists( $errno, $errnotices ) ) ? $errnotices[$errno] : 'Unknown Error' );
-	return "PHP ".$errprep.": ".$errmsg." in $errfile on line $errline";
+     );
+  $errprep = ((array_key_exists($errno, $errnotices)) ? $errnotices[$errno] : 'Unknown Error');
+  return "PHP ".$errprep.": ".$errmsg." in $errfile on line $errline";
 }
-
 
 /**
  * global $error_get_last is used in shutdown error handling.
  * @param errcontext maybe an Array or an Exception depending on what the last error was.
  */
-function set_error_get_last( $errno, $errmsg, $errfile, $errline, $errcontext, $was_exception = false )
+function set_error_get_last($errno, $errmsg, $errfile, $errline, $errcontext, $was_exception = false)
 {
-	global $error_get_last;
-	$error_get_last = 
-	array
-	( 
-		'type' => $errno,
-		'message' => $errmsg, 
-		'file' => $errfile,
-		'line' => $errline,
-		'context' => $errcontext,
-		'was_exception' => $was_exception
-	);
-}	
-
+  global $error_get_last;
+  $error_get_last = 
+  array
+  (
+    'type' => $errno,
+    'message' => $errmsg, 
+    'file' => $errfile,
+    'line' => $errline,
+    'context' => $errcontext,
+    'was_exception' => $was_exception
+  );
+}  
 
 /**
  * Handle all uncaught (terminal) exceptions, incorporating them into the rest of the error system by simply piping into an ~equivalent $error_get_last.
@@ -199,15 +194,14 @@ function set_error_get_last( $errno, $errmsg, $errfile, $errline, $errcontext, $
  * Note An uncaught exception is treated by PHP as a fatal error so we do the same here.
  * @param e Exception.
  */
-function exception_handler( Exception $e )
+function exception_handler(Exception $e)
 { 
-	//Add bits to message to make it same as an exception and log it.
-	ec_re_error_log( E_ERROR, "Uncaught ".$e->__toString()."\nthrown", $e->getFile(), $e->getLine() );
-	//We need to tell shutdown functions an error occured via $error_get_last.
-	//But error_get_last() not set if handler is set so.
-	set_error_get_last( E_ERROR, $e->getMessage(), $e->getFile(), $e->getLine(), $e, true );
+  //Add bits to message to make it same as an exception and log it.
+  ec_re_error_log(E_ERROR, "Uncaught ".$e->__toString()."\nthrown", $e->getFile(), $e->getLine());
+  //We need to tell shutdown functions an error occured via $error_get_last.
+  //But error_get_last() not set if handler is set so.
+  set_error_get_last(E_ERROR, $e->getMessage(), $e->getFile(), $e->getLine(), $e, true);
 }
-
 
 /**
  * Reroute errors to global we are using.
@@ -215,17 +209,17 @@ function exception_handler( Exception $e )
  */
 function ec_error_shutdown_handler()
 {
-	global $error_get_last;
-	$unhandlable = error_get_last();
-	if( $unhandlable && ( $unhandlable['type'] & EC_FATAL ) )
-	{
-		$error_get_last = $unhandlable;
-	}
+  global $error_get_last;
+  $unhandlable = error_get_last();
+  if($unhandlable && ($unhandlable['type'] & EC_FATAL))
+  {
+    $error_get_last = $unhandlable;
+  }
 }
 
-register_shutdown_function( "ec_error_shutdown_handler" );
+register_shutdown_function("ec_error_shutdown_handler");
 //Set the above error handlers. We will handle *all* handle-able conditions.
-set_error_handler( "error_handler" );
-set_exception_handler( "exception_handler" );
+set_error_handler("error_handler");
+set_exception_handler("exception_handler");
 
 ?>
