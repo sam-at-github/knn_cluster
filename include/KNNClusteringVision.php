@@ -7,17 +7,17 @@ require_once('AbstractKNNClustering.php');
 require_once('AbstractKNNCluster.php');
 require_once('make_color_array.php');
 
-/** 
+/**
  * Static class methods for plotting an AbstractKNNClustering through CLI I.f. to gnuplot.
  * Result: some messy code.
  * I cant decide whether to make this instantiable.
- * This code is dependent on gnuplot 4.4 and above! 
+ * This code is dependent on gnuplot 4.4 and above!
  * gnuplot is shotty seems poorly maintained, developed and designed.
  * But its still free and very good if your willing to spend hours(days) screwing around with it to get what you want.
  * @todo make instantiable - Validatation of options is a distinct phase.
  */
 class KNNClusteringVision
-{  
+{
   /** Supported options go here.*/
   private static $default_options = array(
     'visual_k' => null,
@@ -26,7 +26,7 @@ class KNNClusteringVision
     'point_size_multiplier' => 1,
     'point_size' => 1,        //point size used in any point plot.
     'point_type' => 7,        //point type used in any point plot.
-    'plot_size_x' => 1200, 
+    'plot_size_x' => 1200,
     'plot_size_y' => 1200,
     'xrange' => null,          //array(0,10),
     'yrange' => null,         //array(0,10),
@@ -56,10 +56,10 @@ class KNNClusteringVision
    */
   public static function visualize_clustering(AbstractKNNClustering $clustering, $output_dir, $output_file, $type, Array $input_options = array())
   {
-    $cluster_file_fmt;
-    $working_dir;
-    $script_file;
-    $png_file;
+    $cluster_file_fmt = null;
+    $working_dir = null;
+    $script_file = null;
+    $png_file = null;
     /** The gnuplot script contents. Built up thoughout the method.*/
     $script_body = "";
     $options = array_merge(self::$default_options, $input_options);
@@ -92,12 +92,12 @@ class KNNClusteringVision
 
     // A prependage to make gnuplot output a png.
     // Used to generate png then commented out in script output.
-    $png_script_header = "set output '$png_file'\nset terminal png large size ".$options['plot_size_x'].", ".$options['plot_size_y']."\n";  
+    $png_script_header = "set output '$png_file'\nset terminal png large size ".$options['plot_size_x'].", ".$options['plot_size_y']."\n";
 
     // Set title.
     $script_body .= "set title 'type = ".$output_file.", points = ".$clustering->get_size().", clusters = ".$clustering->get_num_clusters()."'\n";
 
-    // Set 'set/'unset'able gnuplt commands.  
+    // Set 'set/'unset'able gnuplt commands.
     foreach($options['gnuplot_unset'] as $unset)
     {
       $script_body .= "unset $unset \n";
@@ -115,7 +115,7 @@ class KNNClusteringVision
     if(isset($options['yrange']))
     {
       $script_body .= "set yrange[".$options['yrange'][0].":".$options['yrange'][1]."]\n";
-    }    
+    }
 
     // Set point options to a value.
     // This should not include the  prefix, it should have been removed in upper layer - time.
@@ -156,7 +156,7 @@ class KNNClusteringVision
     // For each cluster
     // Print cluster to file in appropriate format for gnuplot script.
     // Add line to script plot the cluster, with appropriate settings.
-    // options used: 
+    // options used:
     //    type;
     //    visual_k; if not set default to clustering->get_k(). Mostly dont want to set this.
     //    k_max;
@@ -170,7 +170,7 @@ class KNNClusteringVision
 
       //write terminator for previous line.
       $script_body .= $eol;
-      $eol = ",\\\n";    
+      $eol = ",\\\n";
 
       // Can only use cluster k if cluster has a logical k value.
       // Decided that all clusters now must have this method. If not logical return 0 and defaults to points.
@@ -181,7 +181,7 @@ class KNNClusteringVision
         if($options['use_cluster_k'])
         {
           $visual_k = $cluster->get_cluster_k();
-        }        
+        }
         elseif($options['visual_k'])
         {
           $visual_k = $options['visual_k'];
@@ -204,9 +204,9 @@ class KNNClusteringVision
       }
 
       // The data that goes in the file $cluster_file.
-      // gnuplot script references $cluster_file.      
+      // gnuplot script references $cluster_file.
       $cluster_data = "";
-      $cluster_file = $working_dir."/".sprintf($cluster_file_fmt, $cluster->get_cluster_color_label());  
+      $cluster_file = $working_dir."/".sprintf($cluster_file_fmt, $cluster->get_cluster_color_label());
       switch($type)
       {
         case 'points' :
@@ -220,11 +220,11 @@ class KNNClusteringVision
             $cluster_data .= $knn_vector->__toString()."\n";
           }
           break;
-        }      
+        }
         case 'knn' :
-        {  
-          // Script output part.        
-          $script_body .= "'$cluster_file' with vectors ";          
+        {
+          // Script output part.
+          $script_body .= "'$cluster_file' with vectors ";
           if($options['vector_arrow_size'])
           {
             $script_body .= "size ".$options['vector_arrow_size']." ";
@@ -235,23 +235,23 @@ class KNNClusteringVision
               $script_body .= ", ".$options['vector_arrow_angle']." ";
             }
             else
-            {  
+            {
               $script_body .= ", 30";
             }
-          }      
+          }
           if($options['vector_arrow_filled'])
           {
             $script_body .= "filled ";
-          }        
+          }
           $script_body .= "ls ".$cluster->get_cluster_color_label();
 
           // Corresponding datafile part.
           foreach($cluster->cluster_getIterator() as $knn_vector)
-          { 
+          {
             $cluster_data .= $knn_vector->toString_knn_vectors($visual_k);
           }
           break;
-        }        
+        }
         case 'rcknn' :
         {
           // Script output part.
@@ -266,14 +266,14 @@ class KNNClusteringVision
               $script_body .= ", ".$options['vector_arrow_angle']." ";
             }
             else
-            {  
+            {
               $script_body .= ", 30";
             }
-          }                
+          }
           if($options['vector_arrow_filled'])
           {
             $script_body .= "filled ";
-          }          
+          }
           $script_body .= "ls ".$cluster->get_cluster_color_label();
 
           // Corresponding datafile part.
@@ -281,12 +281,12 @@ class KNNClusteringVision
           {
             $cluster_data .= $knn_vector->toString_rcknn_vectors($visual_k);
           }
-          break;        
-        }        
+          break;
+        }
         case 'avg_vector' :
         {
           // Script output part.
-          $script_body .= "'$cluster_file' with vectors ";        
+          $script_body .= "'$cluster_file' with vectors ";
           if($options['vector_arrow_size'])
           {
             $script_body .= "size ".$options['vector_arrow_size']." ";
@@ -297,28 +297,28 @@ class KNNClusteringVision
               $script_body .= ", ".$options['vector_arrow_angle']." ";
             }
             else
-            {  
+            {
               $script_body .= ", 30";
             }
-          }      
+          }
           if($options['vector_arrow_filled'])
           {
             $script_body .= "filled ";
-          }        
+          }
           $script_body .= "ls ".$cluster->get_cluster_color_label();
 
           // Corresponding datafile part.
           foreach($cluster->cluster_getIterator() as $knn_vector)
           {
             $cluster_data .= $knn_vector->toString_avg_vector($visual_k);
-          }          
+          }
           break;
-        }        
+        }
         default :
         {
           throw new Exception("Invalid vision type '$type'");
         }
-      }                        
+      }
 
       file_put_contents($output_dir."/".$cluster_file, $cluster_data."\n");
 
@@ -357,9 +357,9 @@ class KNNClusteringVision
     $png_file;
     $script_file;
     $png_script_header;
-    $script_body = "";  
+    $script_body = "";
     $point_size_string = "";
-    $point_type_string = "";    
+    $point_type_string = "";
     $output_dir = $options['name']."_classes";
 
     mkdir2($output_dir, true, true);
@@ -452,7 +452,7 @@ class KNNClusteringVision
         foreach($classes as $class_label => $class)
         {
           $class_file =  $options['name']."_class".$class_label.".txt";
-          file_put_contents($output_dir."/".$class_file, $class."\n"); 
+          file_put_contents($output_dir."/".$class_file, $class."\n");
           // Write terminator for previous line.
           $script_body .= $eol;
           $eol = ",\\\n";
@@ -497,7 +497,7 @@ plot '%s' ";
       KNNClusteringVision::make_class_colors($clustering);
     }
 
-    $cluster_script = "";  
+    $cluster_script = "";
     foreach($classes as $class_label => $nil)
     {
       //hack to fix gnupltos not liking zero class label which is the default not labeled label.
@@ -546,7 +546,7 @@ plot '%s' ";
     system("cd $output_dir; gnuplot $output_dir/script_".$output_file_part."_raw_clusters_histogram.gnuplot");
 
     // Output the gnuplot script to render the above gnuplot format classes histogram file and run it.
-    $class_script = "";  
+    $class_script = "";
     foreach($clusters as $cluster_label => $nil)
     {
       //hack to fix gnupltos not liking zero class label which is the default not labeled label.
@@ -555,7 +555,7 @@ plot '%s' ";
     }
 
     $class_script .= "set xlabel 'classes' offset 0,-1\n";
-    $class_script .= "set ylabel 'number of points from each cluster'\n";    
+    $class_script .= "set ylabel 'number of points from each cluster'\n";
 
     $class_script .= sprintf($histo_script_header_fmt, $output_file_part."_raw_classes_histogram", $output_file_part."_raw_classes_histogram.txt");
 
@@ -593,18 +593,18 @@ plot '%s' ";
    * Dont know how many class there are from a clustering so this method.
    */
   public static function make_class_colors(AbstractKNNClustering $clustering)
-  {  
-    $class_colors = array();    
+  {
+    $class_colors = array();
     $vectors = $clustering->cluster_getIterator();
     foreach($vectors as $v)
     {
-      $vector_class = $v->get_class_label();                      
+      $vector_class = $v->get_class_label();
       // Set the class if not set.
       if(! isset($class_colors[$vector_class]))
       {
         $class_colors[$vector_class] = $vector_class;
       }
-    }              
+    }
 
     $colors =  make_color_array(sizeof($class_colors) + 2);
 
@@ -622,17 +622,17 @@ plot '%s' ";
    * Dont knwo how many class there are from a clustering so this method.
    */
   public static function make_class_colors_graph(KNNGraph $graph)
-  {  
-    $class_colors = array();    
+  {
+    $class_colors = array();
     foreach($graph as $v)
     {
-      $vector_class = $v->get_class_label();                      
+      $vector_class = $v->get_class_label();
       // Set the class if not set.
       if(! isset($class_colors[$vector_class]))
       {
         $class_colors[$vector_class] = $vector_class;
       }
-    }              
+    }
 
     $colors =  make_color_array(sizeof($class_colors) + 2);
 
@@ -643,24 +643,24 @@ plot '%s' ";
     $class_colors = array_combine(array_keys($class_colors), $colors);
 
     self::$class_colors = $class_colors;
-  }  
+  }
 
   /**
    * Convenience method to make a color array basically.
    * the same array has to be used at multiple levels.
    */
   public static function make_clustering_colors(AbstractKNNClustering $clustering)
-  {  
-    $cluster_colors = array();    
+  {
+    $cluster_colors = array();
     foreach($clustering->clustering_getIterator() as $cluster)
     {
-      $class = $cluster->get_cluster_color_label();                      
+      $class = $cluster->get_cluster_color_label();
       // Set the class if not set.
       if(! isset($cluster_colors[$class]))
       {
         $cluster_colors[$class] = $class;
       }
-    }              
+    }
 
     $colors =  make_color_array(sizeof($cluster_colors) + 2);
     //print_r($colors);
@@ -676,7 +676,7 @@ plot '%s' ";
 
   /**
    * Make sure same size or larger.
-   */  
+   */
   public static function set_class_colors(Array $class_colors)
   {
     self::$class_colors = $cluster_colors;
@@ -688,5 +688,5 @@ plot '%s' ";
   public static function set_cluster_colors(Array $cluster_colors)
   {
     self::$cluster_colors = $cluster_colors;
-  }  
+  }
 }

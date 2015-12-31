@@ -35,10 +35,10 @@ class KNNClusteringNTreeRCKNN extends NTreeClusteringVirtualHeight implements Lo
     // Construct an internal type NTreeNode to hold children.
     parent::__construct(null);
     $this->graph = $graph;
-    $k_max;
-    $k;
+    $k_max = null;
+    $k = null;
 
-    // Set options none of them are needed after construction 
+    // Set options none of them are needed after construction
     // Set the k_max
     if(isset($options['k_max']))
     {
@@ -56,7 +56,7 @@ class KNNClusteringNTreeRCKNN extends NTreeClusteringVirtualHeight implements Lo
     else
     {
       $k_max = $graph->get_k_max();
-    }  
+    }
     // Set the k option. Set after clustering and may cause construct to fail if too big.
     if(isset($options['k']))
     {
@@ -116,7 +116,7 @@ class KNNClusteringNTreeRCKNN extends NTreeClusteringVirtualHeight implements Lo
     if(! method_exists($this, $method))
     {
       return null;
-    } 
+    }
     return $this->$method();
   }
 
@@ -144,7 +144,7 @@ class KNNClusteringNTreeRCKNN extends NTreeClusteringVirtualHeight implements Lo
    * @param k int k >= 0 && k < graph->k_max.
    */
   public function set_option_k($k)
-  {    
+  {
     if($k < 0)
     {
       throw new OutofBoundsException("K must be non negative. Cannot set K to '".$k."'");
@@ -160,11 +160,11 @@ class KNNClusteringNTreeRCKNN extends NTreeClusteringVirtualHeight implements Lo
   public function cluster()
   {}
 
-  /** 
+  /**
    * Build the clustering with this as root.
    */
   private function build_clustering($k_max)
-  {  
+  {
     // Set initial group of NTreeClustering. Leaf nodes are special.
     // Could even do a copy here. Would be great to set up copy on write mech.
     $progress = new CliProgressUpdater();
@@ -173,7 +173,7 @@ class KNNClusteringNTreeRCKNN extends NTreeClusteringVirtualHeight implements Lo
     foreach($this->graph as $node)
     {
       array_push($clusters, new NTreeClustering($node));
-    }    
+    }
 
     $k_curr = 1;
     while(($k_curr <= $k_max) && (sizeof($clusters) > 1))
@@ -208,21 +208,21 @@ class KNNClusteringNTreeRCKNN extends NTreeClusteringVirtualHeight implements Lo
     {
       $this->add_child($cluster);
     }
-  }  
+  }
 
   /**
    * Implements the RCKNN merging of clusters.
    * Helper to build_clustering().
    */
   private static function dfs_add_rcknn_connected($k, NTreeClustering $cluster, NTreeClustering $new_cluster)
-  {    
+  {
     $new_cluster->add_child($cluster);
 
     // D.F.S.
     foreach($cluster->get_leaf_data() as $node)
     {
       for($j = 0; $j < $k; $j++)
-      {  
+      {
         $neighbour_node = $node->get_nn($j);
         $neighbour_cluster = $neighbour_node->get_root_cluster();
 
@@ -233,14 +233,14 @@ class KNNClusteringNTreeRCKNN extends NTreeClusteringVirtualHeight implements Lo
         }
       }
     }
-  }    
+  }
 
   /**
-   * Implements the RCKNN merging of clusters in non DFS way. Speed is similar. 
+   * Implements the RCKNN merging of clusters in non DFS way. Speed is similar.
    * Helper to build_clustering().
    */
   private static function add_rcknn_connected($k, NTreeClustering $cluster, NTreeClustering $new_cluster)
-  {    
+  {
     $n_chk_clusters = array();
     $chk_clusters = array();
     // Sets the root cluster of the added cluster to caller.
@@ -255,7 +255,7 @@ class KNNClusteringNTreeRCKNN extends NTreeClusteringVirtualHeight implements Lo
         foreach($curr_cluster->get_leaf_data() as $node)
         {
           for($j = 0; $j < $k; $j++)
-          {  
+          {
             $neighbour_node = $node->get_nn($j);
             $neighbour_cluster = $neighbour_node->get_root_cluster();
 
@@ -271,11 +271,11 @@ class KNNClusteringNTreeRCKNN extends NTreeClusteringVirtualHeight implements Lo
       $chk_clusters = $n_chk_clusters;
       $n_chk_clusters = array();
     }
-  }  
+  }
 
 /*
  * toString methods
- */  
+ */
 
   /**
    * Print a string representation of this KNN Graph.
