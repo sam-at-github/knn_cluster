@@ -1,5 +1,6 @@
 Overview
 ========
+<img src="/docs/plot_rcknn_k020_knn.gif" float="right">
 The script `knn_cluster` can be used for visualizing and getting basic stats on different types of KNN connected component based clusterings of a data set. It's useful for testing and visualizing small 2D and 3D data sets. Also its relatively easy to add new types of clusterings and distance metrics, which makes it useful for experimentation (see the `-c=rules` option argument). Currently it's *slow*. The clustering algorithm needs to be rewritten as its O(n^2) rather than O(n*log(n)) as it should be. PHP arrays are also slow which does not help. Although, significantly faster with [HHVM](https://docs.hhvm.com/hhvm/installation/introduction). Not recommended for data sets over 10000pts.
 
 
